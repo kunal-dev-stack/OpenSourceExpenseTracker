@@ -140,7 +140,7 @@ fun AccountsScreen(
                 )
             }
 
-            items(accounts) { acc ->
+            items(accounts, key = { it.id }) { acc ->
                 val isLow = acc.balance < acc.lowBalanceThreshold
                 Card(
                     modifier = Modifier.fillMaxWidth(),

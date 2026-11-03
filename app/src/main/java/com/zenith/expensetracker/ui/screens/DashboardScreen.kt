@@ -35,6 +35,8 @@ import com.zenith.expensetracker.utils.DateUtils
 @Composable
 fun DashboardScreen(
     state: DashboardUiState,
+    userName: String = "",
+    onUserNameChange: ((String) -> Unit)? = null,
     onNavigateToAddTransaction: () -> Unit,
     onNavigateToAccounts: () -> Unit,
     onNavigateToTransactions: () -> Unit,
@@ -44,8 +46,18 @@ fun DashboardScreen(
     modifier: Modifier = Modifier
 ) {
     var showEditNetWorthDialog by remember { mutableStateOf(false) }
+    var showEditNameDialog by remember { mutableStateOf(false) }
     var selectedAccountToEdit by remember { mutableStateOf<Account?>(null) }
     var newBalanceInput by remember { mutableStateOf("") }
+    var nameInput by remember(userName) { mutableStateOf(userName) }
+
+    // Prompt user for name on start if not set yet
+    LaunchedEffect(userName) {
+        if (userName.isBlank()) {
+            showEditNameDialog = true
+        }
+    }
+
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
@@ -71,24 +83,52 @@ fun DashboardScreen(
         ) {
             item {
                 Spacer(modifier = Modifier.height(8.dp))
-                // App Top Bar Title with Privacy Toggle
+                // App Top Bar: App name smaller, User name large & customizable
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
-                        Text(
-                            text = "Welcome Back 👋",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = "Easy Expense Tracker",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable {
+                                nameInput = userName
+                                showEditNameDialog = true
+                            }
+                    ) {
+                        // App Name Smaller
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = "Easy Expense Tracker",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        // User Name Large
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = if (userName.isNotBlank()) "Hello, $userName 👋" else "Welcome! Tap to add name 👋",
+                                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1
+                            )
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit Name",
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            )
+                        }
                     }
+
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         IconButton(onClick = onTogglePrivacy) {
                             Icon(
@@ -317,7 +357,7 @@ fun DashboardScreen(
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(state.accounts) { acc ->
+                    items(state.accounts, key = { it.id }) { acc ->
                         AccountItemCard(
                             account = acc,
                             currency = state.currency,
@@ -366,7 +406,7 @@ fun DashboardScreen(
                     }
                 }
             } else {
-                items(state.recentTransactions) { tx ->
+                items(state.recentTransactions, key = { it.id }) { tx ->
                     val category = state.categoriesMap[tx.categoryId]
                     val catName = category?.name ?: if (tx.type == TransactionType.TRANSFER) "Transfer" else "General"
                     val accName = state.accountsMap[tx.sourceAccountId]?.name ?: "Account"
@@ -533,6 +573,85 @@ fun DashboardScreen(
                     }
                 ) {
                     Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // Enter / Edit User Name Dialog (Shown on start if name is blank or when tapped)
+    if (showEditNameDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                // If name is blank, allow dismissing but keep placeholder
+                showEditNameDialog = false
+            },
+            title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Column {
+                        Text(
+                            text = if (userName.isBlank()) "Welcome!" else "Edit Name",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = "What should we call you?",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "Enter your name to personalize your Easy Expense Tracker experience:",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = nameInput,
+                        onValueChange = { nameInput = it },
+                        label = { Text("Your Name") },
+                        placeholder = { Text("e.g. Alex, Rahul, Sarah") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val trimmed = nameInput.trim()
+                        if (trimmed.isNotBlank() && onUserNameChange != null) {
+                            onUserNameChange(trimmed)
+                        }
+                        showEditNameDialog = false
+                    },
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("Save Name")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditNameDialog = false }) {
+                    Text(if (userName.isBlank()) "Skip" else "Cancel")
                 }
             }
         )

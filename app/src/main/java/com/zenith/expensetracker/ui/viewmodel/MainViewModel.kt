@@ -371,6 +371,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // User Preferences
+    fun setUserName(name: String) = appPreferences.setUserName(name)
     fun setThemeMode(mode: ThemeMode) = appPreferences.setThemeMode(mode)
     fun setAccentTheme(accent: AccentTheme) = appPreferences.setAccentTheme(accent)
     fun setDynamicColor(enabled: Boolean) = appPreferences.setDynamicColor(enabled)

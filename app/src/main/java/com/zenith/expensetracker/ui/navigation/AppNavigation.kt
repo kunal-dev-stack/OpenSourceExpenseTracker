@@ -71,6 +71,8 @@ fun AppNavigation(
             composable(Screen.Dashboard.route) {
                 DashboardScreen(
                     state = dashboardState,
+                    userName = preferences.userName,
+                    onUserNameChange = { newName -> viewModel.setUserName(newName) },
                     onNavigateToAddTransaction = { navController.navigate(Screen.AddTransaction.route) },
                     onNavigateToAccounts = { navController.navigate(Screen.Accounts.route) },
                     onNavigateToTransactions = { navController.navigate(Screen.Transactions.route) },
@@ -120,6 +122,9 @@ fun AppNavigation(
                     currency = dashboardState.currency,
                     selectedMonth = budgetMonth,
                     selectedYear = budgetYear,
+                    netWorth = dashboardState.netWorth,
+                    accounts = allAccounts,
+                    onEditNetWorthAccount = { acc, newBal -> viewModel.adjustAccountBalance(acc, newBal) },
                     onMonthChange = { m, y -> viewModel.selectBudgetMonth(m, y) },
                     onSaveBudget = { catId, limit, m, y -> viewModel.upsertBudget(catId, limit, m, y) },
                     onDeleteBudget = { b -> viewModel.deleteBudget(b) },
@@ -160,6 +165,7 @@ fun AppNavigation(
                     preferences = preferences,
                     currentCurrency = dashboardState.currency,
                     categories = allCategories,
+                    onUserNameChange = { viewModel.setUserName(it) },
                     onThemeModeChange = { viewModel.setThemeMode(it) },
                     onAccentThemeChange = { viewModel.setAccentTheme(it) },
                     onAmoledDarkChange = { viewModel.setAmoledDark(it) },

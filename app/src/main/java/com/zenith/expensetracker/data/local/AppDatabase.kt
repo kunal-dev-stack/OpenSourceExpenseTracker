@@ -87,11 +87,11 @@ abstract class AppDatabase : RoomDatabase() {
 
                 db.categoryDao().insertCategories(expenseCategories + incomeCategories)
 
-                // Default Accounts
+                // Default Accounts (Starts at 0.0 balance)
                 val accounts = listOf(
-                    Account(name = "Cash", type = AccountType.CASH, balance = 2000.0, currency = "₹", colorHex = "#4CAF50", isDefault = true, lowBalanceThreshold = 500.0),
-                    Account(name = "Primary Bank", type = AccountType.BANK_CHECKING, balance = 25000.0, currency = "₹", colorHex = "#2196F3", isDefault = false, lowBalanceThreshold = 2000.0),
-                    Account(name = "Savings Account", type = AccountType.SAVINGS, balance = 50000.0, currency = "₹", colorHex = "#9C27B0", isDefault = false, lowBalanceThreshold = 5000.0)
+                    Account(name = "Cash", type = AccountType.CASH, balance = 0.0, currency = "₹", colorHex = "#4CAF50", isDefault = true, lowBalanceThreshold = 500.0),
+                    Account(name = "Primary Bank", type = AccountType.BANK_CHECKING, balance = 0.0, currency = "₹", colorHex = "#2196F3", isDefault = false, lowBalanceThreshold = 2000.0),
+                    Account(name = "Savings Account", type = AccountType.SAVINGS, balance = 0.0, currency = "₹", colorHex = "#9C27B0", isDefault = false, lowBalanceThreshold = 5000.0)
                 )
 
                 db.accountDao().insertAccounts(accounts)

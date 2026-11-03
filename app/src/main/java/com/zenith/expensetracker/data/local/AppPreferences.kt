@@ -22,6 +22,7 @@ enum class AccentTheme(val displayName: String, val primaryColorHex: String) {
 }
 
 data class UserPreferences(
+    val userName: String = "",
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val accentTheme: AccentTheme = AccentTheme.EMERALD,
     val dynamicColor: Boolean = false,
@@ -41,6 +42,7 @@ class AppPreferences(context: Context) {
     val preferences: StateFlow<UserPreferences> = _preferences.asStateFlow()
 
     private fun loadPreferences(): UserPreferences {
+        val userName = prefs.getString(KEY_USER_NAME, "") ?: ""
         val themeModeStr = prefs.getString(KEY_THEME_MODE, ThemeMode.SYSTEM.name) ?: ThemeMode.SYSTEM.name
         val accentThemeStr = prefs.getString(KEY_ACCENT_THEME, AccentTheme.EMERALD.name) ?: AccentTheme.EMERALD.name
         val dynamicColor = prefs.getBoolean(KEY_DYNAMIC_COLOR, false)
@@ -57,6 +59,7 @@ class AppPreferences(context: Context) {
         val defaultTxType = try { TransactionType.valueOf(defaultTxTypeStr) } catch (_: Exception) { TransactionType.EXPENSE }
 
         return UserPreferences(
+            userName = userName,
             themeMode = themeMode,
             accentTheme = accentTheme,
             dynamicColor = dynamicColor,
@@ -68,6 +71,11 @@ class AppPreferences(context: Context) {
             budgetAlertThreshold = budgetThreshold,
             defaultLowBalanceThreshold = lowBalThreshold
         )
+    }
+
+    fun setUserName(name: String) {
+        prefs.edit().putString(KEY_USER_NAME, name.trim()).apply()
+        _preferences.value = _preferences.value.copy(userName = name.trim())
     }
 
     fun setThemeMode(mode: ThemeMode) {
@@ -121,6 +129,7 @@ class AppPreferences(context: Context) {
     }
 
     companion object {
+        private const val KEY_USER_NAME = "key_user_name"
         private const val KEY_THEME_MODE = "key_theme_mode"
         private const val KEY_ACCENT_THEME = "key_accent_theme"
         private const val KEY_DYNAMIC_COLOR = "key_dynamic_color"
