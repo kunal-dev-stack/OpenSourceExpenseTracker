@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.zenith.expensetracker.data.model.Account
 import com.zenith.expensetracker.data.model.AccountType
+import com.zenith.expensetracker.ui.components.EditNetWorthDialog
 import com.zenith.expensetracker.ui.theme.ExpenseRed
 import com.zenith.expensetracker.ui.theme.IncomeGreen
 
@@ -32,10 +33,12 @@ fun AccountsScreen(
     onNavigateToAddTransaction: () -> Unit,
     onUpdateAccount: ((Account) -> Unit)? = null,
     onDeleteAccount: ((Account) -> Unit)? = null,
+    onSaveAccountsBatch: ((List<Account>, List<Account>) -> Unit)? = null,
     onNavigateBack: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var showAddAccountDialog by remember { mutableStateOf(false) }
+    var showEditNetWorthDialog by remember { mutableStateOf(false) }
     var accountToEdit by remember { mutableStateOf<Account?>(null) }
     var accountName by remember { mutableStateOf("") }
     var accountType by remember { mutableStateOf(AccountType.CASH) }
@@ -113,20 +116,38 @@ fun AccountsScreen(
                         Spacer(modifier = Modifier.height(12.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
                                 text = "${accounts.size} Active Accounts",
                                 fontSize = 12.sp,
                                 color = Color.White.copy(alpha = 0.9f)
                             )
-                            Button(
-                                onClick = onNavigateToAddTransaction,
-                                colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.25f)),
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Text("Transfer Funds", fontSize = 11.sp, color = Color.White)
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(
+                                    onClick = { showEditNetWorthDialog = true },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.25f)),
+                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Edit Balances", fontSize = 11.sp, color = Color.White)
+                                }
+                                Button(
+                                    onClick = onNavigateToAddTransaction,
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.25f)),
+                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text("Transfer", fontSize = 11.sp, color = Color.White)
+                                }
                             }
                         }
                     }
@@ -386,6 +407,26 @@ fun AccountsScreen(
                 TextButton(onClick = { showAddAccountDialog = false }) {
                     Text("Cancel")
                 }
+            }
+        )
+    }
+
+    // Edit Net Worth Dialog (Save all accounts together & Add Secondary Bank)
+    if (showEditNetWorthDialog) {
+        EditNetWorthDialog(
+            accounts = accounts,
+            currency = currency,
+            onDismiss = { showEditNetWorthDialog = false },
+            onSaveAll = { updatedAccounts, newAccounts ->
+                if (onSaveAccountsBatch != null) {
+                    onSaveAccountsBatch(updatedAccounts, newAccounts)
+                } else {
+                    updatedAccounts.forEach { acc -> onUpdateAccount?.invoke(acc) }
+                    newAccounts.forEach { acc ->
+                        onAddAccount(acc.name, acc.type, acc.balance, acc.lowBalanceThreshold, acc.colorHex)
+                    }
+                }
+                showEditNetWorthDialog = false
             }
         )
     }

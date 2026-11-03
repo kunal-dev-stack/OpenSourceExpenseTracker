@@ -197,6 +197,17 @@ class ExpenseRepository(
     suspend fun updateAccount(account: Account) = accountDao.updateAccount(account)
     suspend fun deleteAccount(account: Account) = accountDao.deleteAccount(account)
 
+    suspend fun saveAccountsBatch(updatedAccounts: List<Account>, newAccounts: List<Account>) {
+        database.withTransaction {
+            for (acc in updatedAccounts) {
+                accountDao.updateAccount(acc)
+            }
+            for (newAcc in newAccounts) {
+                accountDao.insertAccount(newAcc)
+            }
+        }
+    }
+
     suspend fun insertCategory(category: Category): Long = categoryDao.insertCategory(category)
     suspend fun updateCategory(category: Category) = categoryDao.updateCategory(category)
     suspend fun deleteCategory(category: Category) = categoryDao.deleteCategory(category)

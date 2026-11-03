@@ -78,7 +78,8 @@ fun AppNavigation(
                     onNavigateToTransactions = { navController.navigate(Screen.Transactions.route) },
                     onNavigateToReports = { navController.navigate(Screen.Analytics.route) },
                     onTogglePrivacy = { viewModel.setPrivacyMode(!dashboardState.privacyModeEnabled) },
-                    onEditNetWorthAccount = { acc, newBal -> viewModel.adjustAccountBalance(acc, newBal) }
+                    onEditNetWorthAccount = { acc, newBal -> viewModel.adjustAccountBalance(acc, newBal) },
+                    onSaveAccountsBatch = { updated, newAccs -> viewModel.saveAccountsBatch(updated, newAccs) }
                 )
             }
 
@@ -125,6 +126,7 @@ fun AppNavigation(
                     netWorth = dashboardState.netWorth,
                     accounts = allAccounts,
                     onEditNetWorthAccount = { acc, newBal -> viewModel.adjustAccountBalance(acc, newBal) },
+                    onSaveAccountsBatch = { updated, newAccs -> viewModel.saveAccountsBatch(updated, newAccs) },
                     onMonthChange = { m, y -> viewModel.selectBudgetMonth(m, y) },
                     onSaveBudget = { catId, limit, m, y -> viewModel.upsertBudget(catId, limit, m, y) },
                     onDeleteBudget = { b -> viewModel.deleteBudget(b) },
@@ -155,6 +157,7 @@ fun AppNavigation(
                     },
                     onUpdateAccount = { acc -> viewModel.updateAccount(acc) },
                     onDeleteAccount = { acc -> viewModel.deleteAccount(acc) },
+                    onSaveAccountsBatch = { updated, newAccs -> viewModel.saveAccountsBatch(updated, newAccs) },
                     onNavigateToAddTransaction = { navController.navigate(Screen.AddTransaction.route) },
                     onNavigateBack = { navController.popBackStack() }
                 )

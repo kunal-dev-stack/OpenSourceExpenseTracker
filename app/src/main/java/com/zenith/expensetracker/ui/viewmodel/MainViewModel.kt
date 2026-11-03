@@ -323,6 +323,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun saveAccountsBatch(updatedAccounts: List<Account>, newAccounts: List<Account> = emptyList()) {
+        viewModelScope.launch {
+            repository.saveAccountsBatch(updatedAccounts, newAccounts)
+        }
+    }
+
     // Categories
     fun addCustomCategory(name: String, iconName: String, colorHex: String, type: TransactionType) {
         viewModelScope.launch {

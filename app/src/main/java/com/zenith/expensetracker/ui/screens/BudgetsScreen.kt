@@ -30,6 +30,7 @@ import com.zenith.expensetracker.data.model.Category
 import com.zenith.expensetracker.data.model.ReminderSetting
 import com.zenith.expensetracker.data.model.Transaction
 import com.zenith.expensetracker.data.model.TransactionType
+import com.zenith.expensetracker.ui.components.EditNetWorthDialog
 import com.zenith.expensetracker.ui.theme.ExpenseRed
 import com.zenith.expensetracker.ui.theme.IncomeGreen
 import com.zenith.expensetracker.ui.theme.WarningAmber
@@ -49,6 +50,7 @@ fun BudgetsScreen(
     netWorth: Double = 0.0,
     accounts: List<com.zenith.expensetracker.data.model.Account> = emptyList(),
     onEditNetWorthAccount: ((com.zenith.expensetracker.data.model.Account, Double) -> Unit)? = null,
+    onSaveAccountsBatch: ((List<com.zenith.expensetracker.data.model.Account>, List<com.zenith.expensetracker.data.model.Account>) -> Unit)? = null,
     onMonthChange: (month: Int, year: Int) -> Unit,
     onSaveBudget: (categoryId: Long, limit: Double, month: Int, year: Int) -> Unit,
     onDeleteBudget: (Budget) -> Unit,
@@ -60,8 +62,6 @@ fun BudgetsScreen(
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     var showEditNetWorthDialog by remember { mutableStateOf(false) }
-    var selectedAccountToEdit by remember { mutableStateOf<com.zenith.expensetracker.data.model.Account?>(null) }
-    var newBalanceInput by remember { mutableStateOf("") }
     var budgetToEdit by remember { mutableStateOf<Budget?>(null) }
     var budgetToDelete by remember { mutableStateOf<Budget?>(null) }
 
@@ -1044,152 +1044,21 @@ fun BudgetsScreen(
         )
     }
 
-    // Edit Net Worth Dialog in BudgetsScreen
+    // Edit Net Worth Dialog in BudgetsScreen (Save all accounts together & Add Secondary Bank)
     if (showEditNetWorthDialog) {
-        AlertDialog(
-            onDismissRequest = {
+        EditNetWorthDialog(
+            accounts = accounts,
+            currency = currency,
+            onDismiss = { showEditNetWorthDialog = false },
+            onSaveAll = { updatedAccounts, newAccounts ->
+                if (onSaveAccountsBatch != null) {
+                    onSaveAccountsBatch(updatedAccounts, newAccounts)
+                } else if (onEditNetWorthAccount != null) {
+                    updatedAccounts.forEach { acc ->
+                        onEditNetWorthAccount(acc, acc.balance)
+                    }
+                }
                 showEditNetWorthDialog = false
-                selectedAccountToEdit = null
-                newBalanceInput = ""
-            },
-            title = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.AccountBalanceWallet,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    Column {
-                        Text(
-                            text = "Edit Net Worth",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                        )
-                        Text(
-                            text = "Current: $currency ${String.format("%.2f", netWorth)}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            },
-            text = {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        text = "Net worth is the sum of your accounts. Select an account to edit its balance:",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    // Account Selection Row
-                    LazyRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(accounts) { acc ->
-                            val isSelected = selectedAccountToEdit?.id == acc.id
-                            FilterChip(
-                                selected = isSelected,
-                                onClick = {
-                                    selectedAccountToEdit = acc
-                                    newBalanceInput = acc.balance.toInt().toString()
-                                },
-                                label = {
-                                    Column(modifier = Modifier.padding(vertical = 2.dp)) {
-                                        Text(acc.name, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal, fontSize = 12.sp)
-                                        Text("$currency${acc.balance.toInt()}", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                }
-                            )
-                        }
-                    }
-
-                    selectedAccountToEdit?.let { currentAcc ->
-                        OutlinedTextField(
-                            value = newBalanceInput,
-                            onValueChange = { newBalanceInput = it },
-                            label = { Text("New Balance for ${currentAcc.name}") },
-                            prefix = {
-                                Text(
-                                    text = "$currency ",
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
-                        )
-
-                        // Quick Increment / Set Pills
-                        LazyRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            items(listOf(1000, 5000, 10000, 25000, 50000)) { amt ->
-                                SuggestionChip(
-                                    onClick = { newBalanceInput = amt.toString() },
-                                    label = { Text("$currency$amt", fontSize = 11.sp) }
-                                )
-                            }
-                        }
-                    } ?: run {
-                        Card(
-                            shape = RoundedCornerShape(10.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                        ) {
-                            Text(
-                                text = "💡 Tap an account chip above to adjust its balance directly.",
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(12.dp),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val acc = selectedAccountToEdit
-                        val newBal = newBalanceInput.toDoubleOrNull()
-                        if (acc != null && newBal != null && onEditNetWorthAccount != null) {
-                            onEditNetWorthAccount(acc, newBal)
-                            showEditNetWorthDialog = false
-                            selectedAccountToEdit = null
-                            newBalanceInput = ""
-                        }
-                    },
-                    enabled = selectedAccountToEdit != null && newBalanceInput.toDoubleOrNull() != null,
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Text("Update Balance")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        showEditNetWorthDialog = false
-                        selectedAccountToEdit = null
-                        newBalanceInput = ""
-                    }
-                ) {
-                    Text("Cancel")
-                }
             }
         )
     }
